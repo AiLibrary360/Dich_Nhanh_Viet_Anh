@@ -11,3 +11,7 @@
 ```bash
 git clone https://github.com/AiLibrary360/Dich_Nhanh_Viet_Anh.git
 cd Dich_Nhanh_Viet_Anh
+conda create -n ai360 python=3.10 -y
+conda activate ai360
+pip install -r requirements.txt
+streamlit run Dich_Nhanh_Viet_Anh.py
