@@ -15,4 +15,5 @@ conda create -n ai360 python=3.10 -y
 conda activate ai360
 pip install -r requirements.txt
 pip install google-generativeai
+pip install python-dotenv
 streamlit run Dich_Nhanh_Viet_Anh.py
