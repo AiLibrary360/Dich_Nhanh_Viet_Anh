@@ -1,9 +1,13 @@
-# Ai-Library360
+# 🚀 Hướng dẫn cài đặt AI-Library360 Translator
 
-Ứng dụng dịch tiếng Việt sang tiếng Anh bằng Google Translate, OpenAI GPT và OpenRouter GPT.
+Ứng dụng dịch nhanh Việt ↔ Anh sử dụng Google Translate, OpenAI GPT và OpenRouter API. Giao diện bằng Streamlit.
 
-## Cài đặt
-conda create -n ai360 python=3.10 -y
-conda activate ai360
-pip install -r requirements.txt
-streamlit run Dich_Nhanh_Viet_Anh.py
+---
+
+## 🛠️ Thiết lập cục bộ bằng Conda
+
+### 1. Tải mã nguồn từ GitHub
+
+```bash
+git clone https://github.com/AiLibrary360/Dich_Nhanh_Viet_Anh.git
+cd Dich_Nhanh_Viet_Anh
