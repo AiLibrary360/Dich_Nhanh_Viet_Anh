@@ -1,118 +1,123 @@
 import streamlit as st
-import os
 from googletrans import Translator
 import openai
 import requests
-import google.generativeai as genai
-from dotenv import load_dotenv
 
-load_dotenv()
+# Hàm gọi OpenAI GPT
+def call_openai_api(text, target_lang):
+    openai_key = st.session_state.get("OPENAI_API_KEY", "")
+    if not openai_key:
+        return "Vui lòng nhập OpenAI API Key!"
+    openai.api_key = openai_key
+    prompt = f"Translate the following text to {target_lang}:\n{text}"
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Lỗi OpenAI API: {e}"
 
-# API Keys
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-ROUTER_API_KEY = os.getenv("ROUTER_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# Hàm gọi Google Gemini (giả lập, bạn thay bằng code thật)
+def call_gemini_api(text, target_lang):
+    gemini_key = st.session_state.get("GEMINI_API_KEY", "")
+    if not gemini_key:
+        return "Vui lòng nhập Google Gemini API Key!"
+    # TODO: Thêm gọi API Gemini thật ở đây
+    return f"[Gemini] Dịch '{text}' sang {target_lang}"
 
-# Cấu hình các API
-if OPENAI_API_KEY:
-    openai.api_key = OPENAI_API_KEY
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
-# Streamlit UI
-st.set_page_config(page_title="AI-Library360 Translator", page_icon="🌐")
-st.title("🌐 AI-Library360 Translator")
-
-# Sidebar
-with st.sidebar:
-    st.markdown("### 🧠 Chọn mô hình dịch")
-    api_choice = st.selectbox("🔗 Nguồn dịch", ["Google Translate", "OpenAI GPT", "OpenRouter", "Gemini"])
-    st.markdown("### 🔄 Chiều dịch")
-    direction = st.radio("Dịch từ:", ["Việt → Anh", "Anh → Việt"])
-
-    st.markdown("---")
-    st.markdown("### ☕ Thông tin ủng hộ")
-    st.markdown("- 💸 **VCB 0121001367936**  \nCTK: NGUYEN HOANG")
-    st.markdown("- 📱 Zalo: 0933314451")
-    st.markdown("- 📧 Mail: stephane.hoangnguyen@gmail.com")
-
-# Thiết lập ngôn ngữ
-src_lang, tgt_lang = ("vi", "en") if direction == "Việt → Anh" else ("en", "vi")
-
-# Nhập liệu
-input_text = st.text_area("✍️ Nhập văn bản cần dịch", height=150)
-
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-# Các hàm dịch
-def translate_google(text, src, tgt):
-    translator = Translator()
-    result = translator.translate(text, src=src, dest=tgt)
-    return result.text
-
-def translate_openai(text, src, tgt):
-    prompt = f"Dịch từ {src} sang {tgt}: {text}"
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message.content.strip()
-
-def translate_openrouter(text, src, tgt):
+# Hàm gọi OpenRouter API GPT4
+def call_openrouter_api(text, target_lang):
+    router_key = st.session_state.get("OPENROUTER_API_KEY", "")
+    if not router_key:
+        return "Vui lòng nhập OpenRouter API Key!"
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {ROUTER_API_KEY}",
+        "Authorization": f"Bearer {router_key}",
         "Content-Type": "application/json"
     }
-    data = {
-        "model": "openai/gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": f"Dịch từ {src} sang {tgt}: {text}"}]
+    prompt = f"Translate the following text to {target_lang}:\n{text}"
+    json_data = {
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.5,
     }
-    response = requests.post(url, headers=headers, json=data)
-    return response.json()["choices"][0]["message"]["content"].strip()
+    try:
+        response = requests.post(url, headers=headers, json=json_data)
+        response.raise_for_status()
+        data = response.json()
+        return data['choices'][0]['message']['content'].strip()
+    except Exception as e:
+        return f"Lỗi OpenRouter API: {e}"
 
-def translate_gemini(text, src, tgt):
-    prompt = f"Dịch từ {src} sang {tgt}: {text}"
-    model = genai.GenerativeModel("gemini-pro")
-    response = model.generate_content(prompt)
-    return response.text.strip()
+def main():
+    st.title("Dịch Nhanh Việt ↔ Anh - Gemini + GPT + OpenRouter + Google Translate")
+    st.markdown("Nhập API key bên dưới để sử dụng GPT, Gemini và OpenRouter")
 
-# Xử lý dịch
-translated_text = ""
-if st.button("📤 Dịch ngay"):
-    if not input_text.strip():
-        st.warning("⚠️ Vui lòng nhập nội dung để dịch.")
-    else:
-        try:
-            if api_choice == "Google Translate":
-                translated_text = translate_google(input_text, src_lang, tgt_lang)
+    # Nhập API Key
+    openai_key = st.text_input("OpenAI API Key", type="password", key="openai_input")
+    gemini_key = st.text_input("Google Gemini API Key", type="password", key="gemini_input")
+    openrouter_key = st.text_input("OpenRouter API Key", type="password", key="openrouter_input")
+
+    # Lưu API key vào session_state
+    if openai_key:
+        st.session_state["OPENAI_API_KEY"] = openai_key
+    if gemini_key:
+        st.session_state["GEMINI_API_KEY"] = gemini_key
+    if openrouter_key:
+        st.session_state["OPENROUTER_API_KEY"] = openrouter_key
+
+    # Chọn chiều dịch
+    lang_dir = st.selectbox("Chọn chiều dịch", ["Việt -> Anh", "Anh -> Việt"])
+
+    # Chọn API dịch
+    api_choice = st.selectbox("Chọn API dịch", [
+        "Google Translate (Không cần API key)",
+        "OpenAI GPT",
+        "Google Gemini",
+        "OpenRouter GPT4"
+    ])
+
+    text = st.text_area("Nhập văn bản cần dịch", height=150)
+
+    if st.button("Dịch"):
+        if not text.strip():
+            st.warning("Vui lòng nhập văn bản cần dịch!")
+        else:
+            target_lang = "en" if lang_dir == "Việt -> Anh" else "vi"
+
+            if api_choice == "Google Translate (Không cần API key)":
+                translator = Translator()
+                try:
+                    translated = translator.translate(text, dest=target_lang).text
+                    st.success(translated)
+                    result = translated
+                except Exception as e:
+                    st.error(f"Lỗi dịch với Google Translate: {e}")
+                    result = ""
+
             elif api_choice == "OpenAI GPT":
-                translated_text = translate_openai(input_text, src_lang, tgt_lang)
-            elif api_choice == "OpenRouter":
-                translated_text = translate_openrouter(input_text, src_lang, tgt_lang)
-            elif api_choice == "Gemini":
-                translated_text = translate_gemini(input_text, src_lang, tgt_lang)
+                result = call_openai_api(text, target_lang)
+                st.success(result)
 
-            st.success("✅ Đã dịch:")
-            st.text_area("📝 Kết quả", value=translated_text, height=150)
+            elif api_choice == "Google Gemini":
+                result = call_gemini_api(text, target_lang)
+                st.success(result)
 
-            # Lưu lịch sử
-            st.session_state.history.insert(0, {
-                "input": input_text,
-                "output": translated_text,
-                "src": src_lang,
-                "tgt": tgt_lang,
-                "api": api_choice
+            elif api_choice == "OpenRouter GPT4":
+                result = call_openrouter_api(text, target_lang)
+                st.success(result)
+
+            # Lưu lịch sử dịch
+            history = st.session_state.get("history", [])
+            history.append({
+                "input": text,
+                "output": result,
+                "api": api_choice,
+                "lang": lang_dir
             })
-        except Exception as e:
-            st.error(f"❌ Lỗi: {str(e)}")
+            st.session_state["history"] = history
 
-# Hiển thị lịch sử
-if st.session_state.history:
-    with st.expander("🕘 Lịch sử dịch gần đây"):
-        for item in st.session_state.history[:10]:
-            st.markdown(f"**[{item['api']}] {item['src']} → {item['tgt']}**")
-            st.markdown(f"🔹 Gốc: {item['input']}")
-            st.markdown(f"🔸 Dịch: {item['output']}")
-            st.markdown("---")
+    # Hiển thị lịch sử dịch (10 mục gần nh
